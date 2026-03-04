@@ -10,7 +10,7 @@ function Catalog() {
         const fetchProducts = async () => {
             try {
                 // Стучимся на localhost:5000, где висит наш бэк
-                const response = await axios.get('http://localhost:5000/api/products');
+                const response = await axios.get('https://telegram-shop-api-2n1h.onrender.com/api/products');
                 setProducts(response.data);
             } catch (error) {
                 console.error('Ошибка загрузки товаров:', error);
