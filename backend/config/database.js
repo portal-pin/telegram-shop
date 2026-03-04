@@ -4,25 +4,38 @@ const dotenv = require('dotenv');
 
 dotenv.config();
 
-// Создаём подключение к PostgreSQL
 const sequelize = new Sequelize(process.env.DATABASE_URL, {
   dialect: 'postgres',
-  dialectOptions: {
-    ssl: {
-      require: true,
-      rejectUnauthorized: false // Важно для Render!
-    }
-  },
-  logging: false // Отключаем логи SQL запросов (для чистоты)
+  dialectOptions: process.env.DATABASE_URL.includes('localhost') || !process.env.DATABASE_URL.includes('render.com') 
+    ? {} // Для локальной разработки без SSL
+    : process.env.DATABASE_URL.includes('internal')
+      ? {} // Internal URL на Render - SSL не нужен
+      : { // External URL - нужен SSL
+          ssl: {
+            require: true,
+            rejectUnauthorized: false
+          }
+        },
+  logging: false,
+  pool: {
+    max: 5,
+    min: 0,
+    acquire: 30000,
+    idle: 10000
+  }
 });
 
-// Проверяем подключение
+// Проверка подключения
 const testConnection = async () => {
   try {
     await sequelize.authenticate();
     console.log('✅ Подключение к базе данных установлено!');
+    console.log(`🔌 Используется URL: ${process.env.DATABASE_URL.substring(0, 30)}...`);
+    
+    await sequelize.sync({ alter: true });
+    console.log('✅ Таблицы синхронизированы');
   } catch (error) {
-    console.error('❌ Ошибка подключения к базе:', error);
+    console.error('❌ Ошибка подключения к базе:', error.message);
   }
 };
 
