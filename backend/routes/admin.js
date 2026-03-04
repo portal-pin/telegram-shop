@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { Category, Product } = require('../models');
-const upload = require('../middleware/upload');
+const uploadMultiple = require('../middleware/upload');
 
 // Простая защита админки (по желанию можно добавить нормальную авторизацию)
 const adminAuth = (req, res, next) => {
@@ -27,7 +27,7 @@ router.get('/categories', adminAuth, async (req, res) => {
 });
 
 // Загрузка изображений (до 5 штук)
-router.post('/upload', adminAuth, upload.array('images', 5), async (req, res) => {
+router.post('/upload', adminAuth, uploadMultiple, async (req, res) => {
   try {
     const files = req.files;
     if (!files || files.length === 0) {
@@ -49,6 +49,7 @@ router.post('/upload', adminAuth, upload.array('images', 5), async (req, res) =>
     res.status(500).json({ error: error.message });
   }
 });
+
 
 // Создание товара
 router.post('/products', adminAuth, async (req, res) => {
