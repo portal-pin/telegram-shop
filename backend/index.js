@@ -32,7 +32,7 @@
                 reply_markup: {
                     inline_keyboard: [
                         // Ссылку на фронт тоже позже пропишем
-                        [{ text: '🛒 Открыть магазин', web_app: { url: process.env.MINI_APP_URL || 'https://example.com' } }]
+                        [{ text: '🛒 Открыть магазин', web_app: { url: process.env.MINI_APP_URL } }]
                     ]
                 }
             });
