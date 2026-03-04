@@ -5,7 +5,7 @@ import Catalog from './pages/Catalog';
 import Admin from './pages/Admin';
 
 // Разрешенные пользователи (без @)
-const ALLOWED_ADMINS = ['Margo_portal', 'volkula66'];
+const ALLOWED_ADMINS = ['Margo_portal', 'Volkula66'];
 
 function App() {
   const [tg, setTg] = useState(null);
