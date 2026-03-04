@@ -4,7 +4,7 @@ import axios from 'axios';
 
 const API_URL = 'https://telegram-shop-api-2n1h.onrender.com/api';
 const ADMIN_KEY = 'vintage2024';
-const ALLOWED_ADMINS = ['@Margo_portal', '@volkula66'];
+const ALLOWED_ADMINS = ['Margo_portal', 'volkula66'];
 
 function Admin() {
   const [categories, setCategories] = useState([]);
