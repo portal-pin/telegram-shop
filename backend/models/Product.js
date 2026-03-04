@@ -17,10 +17,10 @@ const Product = sequelize.define('Product', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-//   defects: {                  
-//     type: DataTypes.TEXT,
-//     allowNull: true
-//   },
+  defects: {                  
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   price: {
     type: DataTypes.INTEGER,
     allowNull: false
