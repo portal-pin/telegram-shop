@@ -4,8 +4,8 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Catalog from './pages/Catalog';
 import Admin from './pages/Admin';
 
-// Разрешенные пользователи
-const ALLOWED_ADMINS = ['@Margo_portal', '@volkula66'];
+// Разрешенные пользователи (без @)
+const ALLOWED_ADMINS = ['Margo_portal', 'volkula66'];
 
 function App() {
   const [tg, setTg] = useState(null);
@@ -13,22 +13,26 @@ function App() {
   const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
-    // Инициализация Telegram Web App
     const tgApp = window.Telegram?.WebApp;
     if (tgApp) {
       tgApp.ready();
       tgApp.expand();
       setTg(tgApp);
       
-      // Получаем данные пользователя
       const userData = tgApp.initDataUnsafe?.user;
       setUser(userData);
       
-      // Проверяем, является ли пользователь админом
+      // ПРОВЕРКА: смотрим что приходит из Telegram
+      console.log('🔥 Telegram user data:', userData);
+      
       if (userData?.username) {
-        const username = `@${userData.username}`;
+        // Убираем @ из проверки
+        const username = userData.username;
+        console.log('👤 Username из Telegram:', username);
+        console.log('👤 Разрешенные:', ALLOWED_ADMINS);
+        console.log('👤 Совпадение:', ALLOWED_ADMINS.includes(username));
+        
         setIsAdmin(ALLOWED_ADMINS.includes(username));
-        console.log('👤 Пользователь:', username, 'Админ:', ALLOWED_ADMINS.includes(username));
       }
     }
   }, []);
@@ -36,31 +40,16 @@ function App() {
   return (
     <BrowserRouter>
       <div>
-        {/* Навигация - показываем только админам */}
+        {/* Для отладки - покажем текущего пользователя */}
+        <div style={{padding: '10px', background: '#f0f0f0', fontSize: '12px'}}>
+          Текущий пользователь: {user?.username || 'неизвестно'} 
+          | Админ: {isAdmin ? '✅' : '❌'}
+        </div>
+
         {isAdmin && (
           <div style={styles.nav}>
-            <Link 
-              to="/" 
-              style={styles.link}
-              onClick={() => tg?.HapticFeedback?.impactOccurred('light')}
-            >
-              🏠 Каталог
-            </Link>
-            <Link 
-              to="/admin" 
-              style={styles.link}
-              onClick={() => tg?.HapticFeedback?.impactOccurred('light')}
-            >
-              👤 Админка
-            </Link>
-          </div>
-        )}
-
-        {/* Приветствие для всех */}
-        {user && (
-          <div style={styles.welcome}>
-            Привет, {user.first_name}! 
-            {user.username && ` @${user.username}`}
+            <Link to="/" style={styles.link}>🏠 Каталог</Link>
+            <Link to="/admin" style={styles.link}>👤 Админка</Link>
           </div>
         )}
 
@@ -79,11 +68,7 @@ const styles = {
     gap: '10px',
     padding: '10px',
     background: 'var(--tg-theme-secondary-bg-color, #f0f0f0)',
-    borderBottom: '1px solid var(--tg-theme-hint-color, #ddd)',
-    position: 'sticky',
-    top: 0,
-    zIndex: 100,
-    backdropFilter: 'blur(10px)'
+    borderBottom: '1px solid var(--tg-theme-hint-color, #ddd)'
   },
   link: {
     padding: '8px 16px',
@@ -92,16 +77,7 @@ const styles = {
     textDecoration: 'none',
     borderRadius: '20px',
     fontSize: '14px',
-    fontWeight: '500',
-    boxShadow: '0 2px 4px rgba(0,0,0,0.1)',
-    transition: 'transform 0.2s',
-    cursor: 'pointer'
-  },
-  welcome: {
-    padding: '10px 16px',
-    fontSize: '14px',
-    color: 'var(--tg-theme-hint-color, #666)',
-    borderBottom: '1px solid var(--tg-theme-hint-color, #eee)'
+    boxShadow: '0 2px 4px rgba(0,0,0,0.1)'
   }
 };
 
