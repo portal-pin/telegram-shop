@@ -4,6 +4,7 @@ const TelegramBot = require('node-telegram-bot-api');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const { Category, Product } = require('./models'); // Импортируем модели
+const adminRoutes = require('./routes/admin');
 
 dotenv.config();
 
@@ -12,6 +13,7 @@ const PORT = process.env.PORT || 5000;
 
 app.use(cors());
 app.use(express.json());
+app.use('/api/admin', adminRoutes);
 
 // ------ ТЕЛЕГРАМ БОТ ------
 const botToken = process.env.BOT_TOKEN;
