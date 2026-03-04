@@ -2,10 +2,9 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-const API_URL = 'https://telegram-shop-api.onrender.com/api';
+const API_URL = 'https://telegram-shop-api-2n1h.onrender.com/api';
 const ADMIN_KEY = 'vintage2024';
-// Разрешенные пользователи (Telegram ID)
-const ALLOWED_USERS = ['@Margo_portal', '@Volkula66'];
+const ALLOWED_ADMINS = ['@Margo_portal', '@volkula66'];
 
 function Admin() {
   const [categories, setCategories] = useState([]);
@@ -13,6 +12,7 @@ function Admin() {
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
+  const [tg, setTg] = useState(null);
   
   // Данные формы
   const [formData, setFormData] = useState({
@@ -31,23 +31,27 @@ function Admin() {
 
   // Проверяем авторизацию при загрузке
   useEffect(() => {
+    const tgApp = window.Telegram?.WebApp;
+    setTg(tgApp);
     checkTelegramAuth();
     fetchCategories();
   }, []);
 
   const checkTelegramAuth = () => {
-    const tg = window.Telegram?.WebApp;
-    if (tg) {
-      const user = tg.initDataUnsafe?.user;
+    const tgApp = window.Telegram?.WebApp;
+    if (tgApp) {
+      const user = tgApp.initDataUnsafe?.user;
       const username = user?.username ? `@${user.username}` : null;
       
-      console.log('Telegram user:', user);
-      console.log('Username:', username);
+      console.log('👤 Проверка доступа:', {
+        username,
+        isAllowed: username && ALLOWED_ADMINS.includes(username)
+      });
       
-      if (username && ALLOWED_USERS.includes(username)) {
+      if (username && ALLOWED_ADMINS.includes(username)) {
         setIsAuthorized(true);
-        tg.MainButton.setText('Добавить товар');
-        tg.MainButton.show();
+        // Вибрация при успешном входе
+        tgApp.HapticFeedback?.notificationOccurred('success');
       } else {
         setIsAuthorized(false);
       }
@@ -57,9 +61,7 @@ function Admin() {
 
   const fetchCategories = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/categories`, {
-        headers: { 'x-admin-key': ADMIN_KEY }
-      });
+      const res = await axios.get(`${API_URL}/categories`);
       setCategories(res.data);
     } catch (error) {
       showMessage('Ошибка загрузки категорий', 'error');
@@ -68,6 +70,11 @@ function Admin() {
 
   const showMessage = (text, type) => {
     setMessage({ text, type });
+    if (type === 'success') {
+      tg?.HapticFeedback?.notificationOccurred('success');
+    } else {
+      tg?.HapticFeedback?.notificationOccurred('error');
+    }
     setTimeout(() => setMessage({ text: '', type: '' }), 3000);
   };
 
@@ -99,6 +106,7 @@ function Admin() {
           images: [...prev.images, ...newImages]
         }));
         showMessage('Фото загружены!', 'success');
+        tg?.HapticFeedback?.impactOccurred('medium');
       }
     } catch (error) {
       showMessage('Ошибка загрузки фото', 'error');
@@ -112,6 +120,7 @@ function Admin() {
       ...prev,
       images: prev.images.filter((_, i) => i !== index)
     }));
+    tg?.HapticFeedback?.impactOccurred('light');
   };
 
   const handleSubmit = async (e) => {
@@ -138,6 +147,7 @@ function Admin() {
           condition: 'good', era: '', brand: '', size: '',
           material: '', madeIn: '', images: []
         });
+        tg?.HapticFeedback?.impactOccurred('heavy');
       }
     } catch (error) {
       showMessage('Ошибка при сохранении', 'error');
@@ -148,10 +158,9 @@ function Admin() {
 
   if (checkingAuth) {
     return (
-      <div style={styles.container}>
-        <div style={styles.center}>
-          <p>Проверка доступа...</p>
-        </div>
+      <div style={styles.center}>
+        <div style={styles.loader}></div>
+        <p>Проверка доступа...</p>
       </div>
     );
   }
@@ -159,12 +168,21 @@ function Admin() {
   if (!isAuthorized) {
     return (
       <div style={styles.container}>
-        <div style={styles.center}>
-          <h2 style={{ color: '#721c24' }}>🚫 Доступ запрещен</h2>
-          <p>Эта страница только для менеджеров магазина.</p>
-          <p style={{ fontSize: '14px', color: '#666', marginTop: '20px' }}>
+        <div style={styles.denied}>
+          <span style={styles.deniedIcon}>🚫</span>
+          <h2 style={styles.deniedTitle}>Доступ запрещен</h2>
+          <p style={styles.deniedText}>
+            Эта страница только для менеджеров магазина.
+          </p>
+          <p style={styles.deniedHint}>
             Если вы менеджер, убедитесь что открываете админку через Telegram.
           </p>
+          <button 
+            onClick={() => window.location.href = '/'}
+            style={styles.backBtn}
+          >
+            ← Вернуться в каталог
+          </button>
         </div>
       </div>
     );
@@ -173,7 +191,7 @@ function Admin() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🎨 Добавление товара</h1>
+        <h1 style={styles.title}>➕ Добавление товара</h1>
         {message.text && (
           <div style={{
             ...styles.message,
@@ -248,6 +266,7 @@ function Admin() {
                     type="button" 
                     onClick={() => removeImage(index)}
                     style={styles.removeBtn}
+                    title="Удалить фото"
                   >✕</button>
                 </div>
               ))}
@@ -365,23 +384,76 @@ const styles = {
     margin: '0 auto',
     padding: '20px',
     background: 'var(--tg-theme-bg-color, #fff)',
-    color: 'var(--tg-theme-text-color, #000)'
+    color: 'var(--tg-theme-text-color, #000)',
+    minHeight: '100vh'
   },
   center: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
     textAlign: 'center',
-    padding: '50px 20px'
+    padding: '20px'
+  },
+  loader: {
+    width: '40px',
+    height: '40px',
+    border: '3px solid var(--tg-theme-secondary-bg-color, #f3f3f3)',
+    borderTop: '3px solid var(--tg-theme-button-color, #40a7e3)',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    marginBottom: '20px'
+  },
+  denied: {
+    textAlign: 'center',
+    maxWidth: '400px',
+    margin: '0 auto'
+  },
+  deniedIcon: {
+    fontSize: '48px',
+    display: 'block',
+    marginBottom: '20px'
+  },
+  deniedTitle: {
+    fontSize: '24px',
+    marginBottom: '10px',
+    color: '#721c24'
+  },
+  deniedText: {
+    fontSize: '16px',
+    marginBottom: '20px',
+    color: 'var(--tg-theme-text-color, #000)'
+  },
+  deniedHint: {
+    fontSize: '14px',
+    color: 'var(--tg-theme-hint-color, #666)',
+    marginBottom: '30px'
+  },
+  backBtn: {
+    padding: '12px 30px',
+    background: 'var(--tg-theme-button-color, #40a7e3)',
+    color: 'var(--tg-theme-button-text-color, #fff)',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '16px',
+    cursor: 'pointer',
+    textDecoration: 'none',
+    display: 'inline-block'
   },
   header: {
     marginBottom: '30px'
   },
   title: {
     fontSize: '24px',
-    marginBottom: '10px'
+    marginBottom: '15px',
+    color: 'var(--tg-theme-text-color, #000)'
   },
   message: {
     padding: '12px',
     borderRadius: '8px',
-    marginBottom: '20px'
+    marginBottom: '20px',
+    animation: 'slideIn 0.3s ease'
   },
   success: {
     background: '#d4edda',
@@ -414,32 +486,36 @@ const styles = {
     color: 'var(--tg-theme-hint-color, #666)'
   },
   input: {
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid var(--tg-theme-hint-color, #ddd)',
     fontSize: '16px',
-    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)'
+    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
+    color: 'var(--tg-theme-text-color, #000)'
   },
   select: {
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid var(--tg-theme-hint-color, #ddd)',
     fontSize: '16px',
-    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)'
+    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
+    color: 'var(--tg-theme-text-color, #000)'
   },
   textarea: {
-    padding: '10px',
-    borderRadius: '8px',
-    border: '1px solid #ddd',
+    padding: '12px',
+    borderRadius: '10px',
+    border: '1px solid var(--tg-theme-hint-color, #ddd)',
     fontSize: '16px',
     resize: 'vertical',
-    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)'
+    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
+    color: 'var(--tg-theme-text-color, #000)'
   },
   fileInput: {
-    padding: '10px',
+    padding: '12px',
     background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
-    borderRadius: '8px',
-    cursor: 'pointer'
+    borderRadius: '10px',
+    cursor: 'pointer',
+    border: '1px dashed var(--tg-theme-hint-color, #ddd)'
   },
   previewGrid: {
     display: 'grid',
@@ -451,7 +527,8 @@ const styles = {
     position: 'relative',
     aspectRatio: '1',
     borderRadius: '8px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
   previewImg: {
     width: '100%',
@@ -472,23 +549,45 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px'
+    fontSize: '14px',
+    transition: 'transform 0.2s'
   },
   submitBtn: {
-    padding: '15px',
+    padding: '16px',
     background: 'var(--tg-theme-button-color, #40a7e3)',
     color: 'var(--tg-theme-button-text-color, #fff)',
     border: 'none',
-    borderRadius: '8px',
+    borderRadius: '10px',
     fontSize: '16px',
     fontWeight: 'bold',
     cursor: 'pointer',
-    marginTop: '20px'
+    marginTop: '20px',
+    transition: 'opacity 0.3s'
   },
   submitBtnDisabled: {
     opacity: 0.5,
     cursor: 'not-allowed'
   }
 };
+
+// Добавляем анимации
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+  @keyframes slideIn {
+    from {
+      transform: translateY(-20px);
+      opacity: 0;
+    }
+    to {
+      transform: translateY(0);
+      opacity: 1;
+    }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default Admin;
