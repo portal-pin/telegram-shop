@@ -247,7 +247,7 @@ function Admin() {
         </div>
 
         <div style={styles.field}>
-          <label style={styles.label}>Фотографии товара</label>
+          <label style={styles.label}>Фотографии товара (до 15 шт)</label>
           <input
             type="file"
             multiple
