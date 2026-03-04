@@ -140,9 +140,11 @@ function Catalog() {
                       <span style={styles.productEra}>{product.era}</span>
                     )}
                   </div>
-                  <button style={styles.detailsBtn}>
-                    Подробнее
-                  </button>
+                    <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
+                        <button style={styles.detailsBtn}>
+                            Подробнее
+                        </button>
+                    </Link>
                 </div>
               </div>
             ))}

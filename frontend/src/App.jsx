@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import Catalog from './pages/Catalog';
 import Admin from './pages/Admin';
+import ProductPage from './pages/ProductPage';
 
 // Разрешенные пользователи (без @)
 const ALLOWED_ADMINS = ['Margo_portal', 'Volkula66'];
@@ -56,6 +57,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Catalog />} />
           <Route path="/admin" element={<Admin />} />
+          <Route path="/product/:id" element={<ProductPage />} />
         </Routes>
       </div>
     </BrowserRouter>

@@ -20,6 +20,7 @@ function Admin() {
     price: '',
     categoryId: '',
     description: '',
+    defects: '', 
     condition: 'good',
     era: '',
     brand: '',
@@ -285,7 +286,20 @@ function Admin() {
             placeholder="История вещи, особенности, состояние..."
           />
         </div>
-
+        <div style={styles.field}>
+            <label style={styles.label}>Дефекты/Минусы (если есть)</label>
+            <textarea
+            name="defects"
+            value={formData.defects}
+            onChange={handleInputChange}
+            style={{...styles.textarea, borderColor: '#ff6b6b'}}
+            rows="3"
+            placeholder="Потертости на рукаве, отсутствует пуговица, следы носки и т.д."
+            />
+            <small style={{color: '#666', fontSize: '12px'}}>
+            Будьте честны с покупателем ✨
+            </small>
+        </div>
         <div style={styles.grid}>
           <div style={styles.field}>
             <label style={styles.label}>Состояние</label>
