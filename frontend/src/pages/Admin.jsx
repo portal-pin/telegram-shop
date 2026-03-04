@@ -2,14 +2,17 @@
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 
-// Настройка API (замени на свой URL)
 const API_URL = 'https://telegram-shop-api.onrender.com/api';
-const ADMIN_KEY = 'vintage2024'; // Тот же ключ что в .env
+const ADMIN_KEY = 'vintage2024';
+// Разрешенные пользователи (Telegram ID)
+const ALLOWED_USERS = ['@Margo_portal', '@volkula66'];
 
 function Admin() {
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
+  const [isAuthorized, setIsAuthorized] = useState(false);
+  const [checkingAuth, setCheckingAuth] = useState(true);
   
   // Данные формы
   const [formData, setFormData] = useState({
@@ -26,10 +29,31 @@ function Admin() {
     images: []
   });
 
-  // Загружаем категории при открытии
+  // Проверяем авторизацию при загрузке
   useEffect(() => {
+    checkTelegramAuth();
     fetchCategories();
   }, []);
+
+  const checkTelegramAuth = () => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      const user = tg.initDataUnsafe?.user;
+      const username = user?.username ? `@${user.username}` : null;
+      
+      console.log('Telegram user:', user);
+      console.log('Username:', username);
+      
+      if (username && ALLOWED_USERS.includes(username)) {
+        setIsAuthorized(true);
+        tg.MainButton.setText('Добавить товар');
+        tg.MainButton.show();
+      } else {
+        setIsAuthorized(false);
+      }
+    }
+    setCheckingAuth(false);
+  };
 
   const fetchCategories = async () => {
     try {
@@ -93,7 +117,6 @@ function Admin() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     
-    // Простая валидация
     if (!formData.name || !formData.price || !formData.categoryId) {
       showMessage('Заполните название, цену и категорию', 'error');
       return;
@@ -110,7 +133,6 @@ function Admin() {
 
       if (res.data.success) {
         showMessage('✅ Товар добавлен!', 'success');
-        // Очищаем форму
         setFormData({
           name: '', price: '', categoryId: '', description: '',
           condition: 'good', era: '', brand: '', size: '',
@@ -124,10 +146,34 @@ function Admin() {
     }
   };
 
+  if (checkingAuth) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.center}>
+          <p>Проверка доступа...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!isAuthorized) {
+    return (
+      <div style={styles.container}>
+        <div style={styles.center}>
+          <h2 style={{ color: '#721c24' }}>🚫 Доступ запрещен</h2>
+          <p>Эта страница только для менеджеров магазина.</p>
+          <p style={{ fontSize: '14px', color: '#666', marginTop: '20px' }}>
+            Если вы менеджер, убедитесь что открываете админку через Telegram.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>🎨 Админка винтажного магазина</h1>
+        <h1 style={styles.title}>🎨 Добавление товара</h1>
         {message.text && (
           <div style={{
             ...styles.message,
@@ -139,7 +185,6 @@ function Admin() {
       </div>
 
       <form onSubmit={handleSubmit} style={styles.form}>
-        {/* Основные поля */}
         <div style={styles.grid}>
           <div style={styles.field}>
             <label style={styles.label}>Название товара *</label>
@@ -183,7 +228,6 @@ function Admin() {
           </div>
         </div>
 
-        {/* Загрузка фото */}
         <div style={styles.field}>
           <label style={styles.label}>Фотографии товара</label>
           <input
@@ -195,7 +239,6 @@ function Admin() {
             disabled={loading}
           />
           
-          {/* Превью загруженных фото */}
           {formData.images.length > 0 && (
             <div style={styles.previewGrid}>
               {formData.images.map((img, index) => (
@@ -212,7 +255,6 @@ function Admin() {
           )}
         </div>
 
-        {/* Детальное описание */}
         <div style={styles.field}>
           <label style={styles.label}>Описание</label>
           <textarea
@@ -225,7 +267,6 @@ function Admin() {
           />
         </div>
 
-        {/* Характеристики */}
         <div style={styles.grid}>
           <div style={styles.field}>
             <label style={styles.label}>Состояние</label>
@@ -303,7 +344,6 @@ function Admin() {
           </div>
         </div>
 
-        {/* Кнопка отправки */}
         <button 
           type="submit" 
           disabled={loading}
@@ -319,7 +359,6 @@ function Admin() {
   );
 }
 
-// Стили (простые inline)
 const styles = {
   container: {
     maxWidth: '800px',
@@ -327,6 +366,10 @@ const styles = {
     padding: '20px',
     background: 'var(--tg-theme-bg-color, #fff)',
     color: 'var(--tg-theme-text-color, #000)'
+  },
+  center: {
+    textAlign: 'center',
+    padding: '50px 20px'
   },
   header: {
     marginBottom: '30px'

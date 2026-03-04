@@ -107,64 +107,39 @@ app.get('/api/products/:id', async (req, res) => {
 });
 
 // ------ ВРЕМЕННАЯ АДМИНКА ДЛЯ ДОБАВЛЕНИЯ ТЕСТОВЫХ ДАННЫХ ------
-app.post('/api/admin/seed', async (req, res) => {
+app.post('/api/init-categories', async (req, res) => {
   try {
-    // Создаём категории
-    const clothing = await Category.create({
-      name: 'Одежда',
-      slug: 'clothing',
-      description: 'Винтажная одежда',
-      order: 1
-    });
+    const { Category } = require('./models');
+    
+    const categories = [
+      { name: 'Пиджаки/Костюмы', slug: 'jackets-suits', order: 1 },
+      { name: 'Юбки', slug: 'skirts', order: 2 },
+      { name: 'Майки/Топы', slug: 'tops', order: 3 },
+      { name: 'Брюки/Джинсы', slug: 'pants-jeans', order: 4 },
+      { name: 'Свитеры/Кардиганы', slug: 'sweaters-cardigans', order: 5 },
+      { name: 'Сумки/Аксессуары', slug: 'bags-accessories', order: 6 },
+      { name: 'Платья', slug: 'dresses', order: 7 },
+      { name: 'Рубашки/Блузы', slug: 'shirts-blouses', order: 8 },
+      { name: 'Шорты', slug: 'shorts', order: 9 },
+      { name: 'Обувь', slug: 'shoes', order: 10 },
+      { name: 'Верхняя одежда', slug: 'outerwear', order: 11 }
+    ];
 
-    const shoes = await Category.create({
-      name: 'Обувь',
-      slug: 'shoes',
-      description: 'Винтажная обувь',
-      order: 2
-    });
+    const count = await Category.count();
+    if (count > 0) {
+      return res.json({ message: `В базе уже есть ${count} категорий`, categories: await Category.findAll() });
+    }
 
-    const jeans = await Category.create({
-      name: 'Джинсы 90-х',
-      slug: 'jeans-90s',
-      description: 'Настоящий винтаж из 90-х',
-      parentId: clothing.id,
-      order: 1
-    });
+    for (const cat of categories) {
+      await Category.create(cat);
+    }
 
-    // Создаём тестовые товары
-    await Product.create({
-      name: "Levi's 501 1993",
-      description: 'Оригинальные джинсы 1993 года выпуска. Сделано в США. Отличное состояние, все бирки на месте.',
-      price: 5900,
-      condition: 'excellent',
-      era: '90s',
-      brand: "Levi's",
-      size: 'W32 L34',
-      material: '100% хлопок',
-      madeIn: 'USA',
-      images: ['https://via.placeholder.com/600x400?text=Levi+501'],
-      categoryId: jeans.id
+    res.json({ 
+      message: '✅ Категории созданы!',
+      categories: await Category.findAll()
     });
-
-    await Product.create({
-      name: "Adidas Campus 80s",
-      description: 'Винтажные кроссовки 80-х годов. Оригинальная замша, родная коробка.',
-      price: 8900,
-      condition: 'good',
-      era: '80s',
-      brand: 'Adidas',
-      size: '42',
-      material: 'Замша',
-      madeIn: 'Germany',
-      images: ['https://via.placeholder.com/600x400?text=Adidas+Campus'],
-      categoryId: shoes.id
-    });
-
-    res.json({ message: '✅ Тестовые данные добавлены' });
   } catch (error) {
-    console.error('Ошибка добавления тестовых данных:', error);
-    res.status(500).json({ error: 'Ошибка сервера' });
+    res.status(500).json({ error: error.message });
   }
 });
 
