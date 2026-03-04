@@ -1,0 +1,28 @@
+# Зависимости - их никогда не коммитим!
+node_modules/
+.pnp
+.pnp.js
+
+# Логи и временные файлы
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+.DS_Store
+*.log
+
+# Переменные окружения (секреты)
+.env
+.env.local
+.env.production
+
+# Папки сборки
+dist/
+build/
+
+# Vercel
+.vercel
+
+# IDE
+.vscode/
+.idea/
+*.sublime-*
