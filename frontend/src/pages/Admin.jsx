@@ -1,63 +1,63 @@
 // frontend/src/pages/Admin.jsx
 import React, { useState, useEffect } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 import axios from 'axios';
+import { useTelegramUser } from '../hooks/useTelegramUser';
 
 const API_URL = 'https://telegram-shop-api-2n1h.onrender.com/api';
-const ADMIN_KEY = 'vintage2024';
-const ALLOWED_ADMINS = ['@Margo_portal', '@Volkula66'];
 
 function Admin() {
+  const { id } = useParams();
+  const navigate = useNavigate();
+  const { user, initData, isReady } = useTelegramUser();
   const [categories, setCategories] = useState([]);
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState({ text: '', type: '' });
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [checkingAuth, setCheckingAuth] = useState(true);
-  const [tg, setTg] = useState(null);
   
-  // Данные формы
   const [formData, setFormData] = useState({
     name: '',
     price: '',
     categoryId: '',
     description: '',
-    defects: '', 
+    defects: '',
     condition: 'good',
     era: '',
     brand: '',
     size: '',
     material: '',
     madeIn: '',
-    images: []
+    images: [],
+    isAvailable: true
   });
 
-  // Проверяем авторизацию при загрузке
+  // Проверяем авторизацию и загружаем данные
   useEffect(() => {
-    const tgApp = window.Telegram?.WebApp;
-    setTg(tgApp);
-    checkTelegramAuth();
-    fetchCategories();
-  }, []);
-
-  const checkTelegramAuth = () => {
-    const tgApp = window.Telegram?.WebApp;
-    if (tgApp) {
-      const user = tgApp.initDataUnsafe?.user;
-      const username = user?.username ? `@${user.username}` : null;
-      
-      console.log('👤 Проверка доступа:', {
-        username,
-        isAllowed: username && ALLOWED_ADMINS.includes(username)
-      });
-      
-      if (username && ALLOWED_ADMINS.includes(username)) {
-        setIsAuthorized(true);
-        // Вибрация при успешном входе
-        tgApp.HapticFeedback?.notificationOccurred('success');
-      } else {
-        setIsAuthorized(false);
+    if (isReady) {
+      checkAuth();
+      fetchCategories();
+      if (id) {
+        fetchProduct(id);
       }
     }
-    setCheckingAuth(false);
+  }, [isReady, id]);
+
+  const checkAuth = async () => {
+    try {
+      const res = await axios.get(`${API_URL}/admin/categories`, {
+        headers: {
+          'x-telegram-init-data': initData
+        }
+      });
+      // Если запрос успешен - пользователь админ
+      setIsAuthorized(true);
+    } catch (error) {
+      console.error('Ошибка авторизации:', error);
+      setIsAuthorized(false);
+    } finally {
+      setCheckingAuth(false);
+    }
   };
 
   const fetchCategories = async () => {
@@ -69,19 +69,47 @@ function Admin() {
     }
   };
 
+  const fetchProduct = async (productId) => {
+    try {
+      const res = await axios.get(`${API_URL}/products/${productId}`);
+      const product = res.data;
+      
+      // Преобразуем изображения обратно в массив URL
+      const images = product.images?.map(img => 
+        typeof img === 'string' ? img : img.url
+      ) || [];
+
+      setFormData({
+        name: product.name || '',
+        price: product.price || '',
+        categoryId: product.categoryId || '',
+        description: product.description || '',
+        defects: product.defects || '',
+        condition: product.condition || 'good',
+        era: product.era || '',
+        brand: product.brand || '',
+        size: product.size || '',
+        material: product.material || '',
+        madeIn: product.madeIn || '',
+        images: images,
+        isAvailable: product.isAvailable !== false
+      });
+    } catch (error) {
+      showMessage('Ошибка загрузки товара', 'error');
+    }
+  };
+
   const showMessage = (text, type) => {
     setMessage({ text, type });
-    if (type === 'success') {
-      tg?.HapticFeedback?.notificationOccurred('success');
-    } else {
-      tg?.HapticFeedback?.notificationOccurred('error');
-    }
     setTimeout(() => setMessage({ text: '', type: '' }), 3000);
   };
 
   const handleInputChange = (e) => {
-    const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    const { name, value, type, checked } = e.target;
+    setFormData(prev => ({
+      ...prev,
+      [name]: type === 'checkbox' ? checked : value
+    }));
   };
 
   const handleImageUpload = async (e) => {
@@ -95,7 +123,7 @@ function Admin() {
     try {
       const res = await axios.post(`${API_URL}/admin/upload`, formData, {
         headers: { 
-          'x-admin-key': ADMIN_KEY,
+          'x-telegram-init-data': initData,
           'Content-Type': 'multipart/form-data'
         }
       });
@@ -107,7 +135,6 @@ function Admin() {
           images: [...prev.images, ...newImages]
         }));
         showMessage('Фото загружены!', 'success');
-        tg?.HapticFeedback?.impactOccurred('medium');
       }
     } catch (error) {
       showMessage('Ошибка загрузки фото', 'error');
@@ -116,12 +143,16 @@ function Admin() {
     }
   };
 
+  const setMainImage = (index) => {
+    const newImages = [...formData.images];
+    const [selected] = newImages.splice(index, 1);
+    newImages.unshift(selected);
+    setFormData(prev => ({ ...prev, images: newImages }));
+  };
+
   const removeImage = (index) => {
-    setFormData(prev => ({
-      ...prev,
-      images: prev.images.filter((_, i) => i !== index)
-    }));
-    tg?.HapticFeedback?.impactOccurred('light');
+    const newImages = formData.images.filter((_, i) => i !== index);
+    setFormData(prev => ({ ...prev, images: newImages }));
   };
 
   const handleSubmit = async (e) => {
@@ -134,21 +165,31 @@ function Admin() {
 
     setLoading(true);
     try {
-      const res = await axios.post(`${API_URL}/admin/products`, {
+      const url = id 
+        ? `${API_URL}/admin/products/${id}`
+        : `${API_URL}/admin/products`;
+      
+      const method = id ? 'put' : 'post';
+
+      const res = await axios[method](url, {
         ...formData,
         price: parseInt(formData.price)
       }, {
-        headers: { 'x-admin-key': ADMIN_KEY }
+        headers: { 'x-telegram-init-data': initData }
       });
 
       if (res.data.success) {
-        showMessage('✅ Товар добавлен!', 'success');
-        setFormData({
-          name: '', price: '', categoryId: '', description: '',
-          condition: 'good', era: '', brand: '', size: '',
-          material: '', madeIn: '', images: []
-        });
-        tg?.HapticFeedback?.impactOccurred('heavy');
+        showMessage(id ? '✅ Товар обновлен!' : '✅ Товар добавлен!', 'success');
+        if (!id) {
+          // Очищаем форму только для нового товара
+          setFormData({
+            name: '', price: '', categoryId: '', description: '',
+            defects: '', condition: 'good', era: '', brand: '',
+            size: '', material: '', madeIn: '', images: [],
+            isAvailable: true
+          });
+        }
+        setTimeout(() => navigate('/'), 2000);
       }
     } catch (error) {
       showMessage('Ошибка при сохранении', 'error');
@@ -175,11 +216,8 @@ function Admin() {
           <p style={styles.deniedText}>
             Эта страница только для менеджеров магазина.
           </p>
-          <p style={styles.deniedHint}>
-            Если вы менеджер, убедитесь что открываете админку через Telegram.
-          </p>
           <button 
-            onClick={() => window.location.href = '/'}
+            onClick={() => navigate('/')}
             style={styles.backBtn}
           >
             ← Вернуться в каталог
@@ -192,7 +230,12 @@ function Admin() {
   return (
     <div style={styles.container}>
       <div style={styles.header}>
-        <h1 style={styles.title}>➕ Добавление товара</h1>
+        <button onClick={() => navigate('/')} style={styles.backButton}>
+          ← Назад
+        </button>
+        <h1 style={styles.title}>
+          {id ? '✏️ Редактирование товара' : '➕ Добавление товара'}
+        </h1>
         {message.text && (
           <div style={{
             ...styles.message,
@@ -263,6 +306,15 @@ function Admin() {
               {formData.images.map((img, index) => (
                 <div key={index} style={styles.previewItem}>
                   <img src={img} alt={`preview ${index}`} style={styles.previewImg} />
+                  {index === 0 && (
+                    <span style={styles.mainBadge}>⭐</span>
+                  )}
+                  <button 
+                    type="button" 
+                    onClick={() => setMainImage(index)}
+                    style={styles.setMainBtn}
+                    title="Сделать главным"
+                  >⭐</button>
                   <button 
                     type="button" 
                     onClick={() => removeImage(index)}
@@ -283,23 +335,22 @@ function Admin() {
             onChange={handleInputChange}
             style={styles.textarea}
             rows="4"
-            placeholder="История вещи, особенности, состояние..."
+            placeholder="История вещи, особенности..."
           />
         </div>
+
         <div style={styles.field}>
-            <label style={styles.label}>Дефекты/Минусы (если есть)</label>
-            <textarea
+          <label style={{...styles.label, color: '#ff6b6b'}}>Дефекты/Минусы</label>
+          <textarea
             name="defects"
             value={formData.defects}
             onChange={handleInputChange}
             style={{...styles.textarea, borderColor: '#ff6b6b'}}
             rows="3"
-            placeholder="Потертости на рукаве, отсутствует пуговица, следы носки и т.д."
-            />
-            <small style={{color: '#666', fontSize: '12px'}}>
-            Будьте честны с покупателем ✨
-            </small>
+            placeholder="Потертости, отсутствие пуговиц, следы носки..."
+          />
         </div>
+
         <div style={styles.grid}>
           <div style={styles.field}>
             <label style={styles.label}>Состояние</label>
@@ -377,6 +428,18 @@ function Admin() {
           </div>
         </div>
 
+        <div style={styles.field}>
+          <label style={styles.label}>
+            <input
+              type="checkbox"
+              name="isAvailable"
+              checked={formData.isAvailable}
+              onChange={handleInputChange}
+            />
+            {' '}Товар в наличии
+          </label>
+        </div>
+
         <button 
           type="submit" 
           disabled={loading}
@@ -385,7 +448,7 @@ function Admin() {
             ...(loading ? styles.submitBtnDisabled : {})
           }}
         >
-          {loading ? 'Загрузка...' : '➕ Добавить товар'}
+          {loading ? 'Загрузка...' : (id ? '💾 Сохранить изменения' : '➕ Добавить товар')}
         </button>
       </form>
     </div>
@@ -439,11 +502,6 @@ const styles = {
     marginBottom: '20px',
     color: 'var(--tg-theme-text-color, #000)'
   },
-  deniedHint: {
-    fontSize: '14px',
-    color: 'var(--tg-theme-hint-color, #666)',
-    marginBottom: '30px'
-  },
   backBtn: {
     padding: '12px 30px',
     background: 'var(--tg-theme-button-color, #40a7e3)',
@@ -451,9 +509,16 @@ const styles = {
     border: 'none',
     borderRadius: '8px',
     fontSize: '16px',
+    cursor: 'pointer'
+  },
+  backButton: {
+    background: 'none',
+    border: 'none',
+    color: 'var(--tg-theme-button-color, #40a7e3)',
+    fontSize: '16px',
+    padding: '10px 0',
     cursor: 'pointer',
-    textDecoration: 'none',
-    display: 'inline-block'
+    marginBottom: '10px'
   },
   header: {
     marginBottom: '30px'
@@ -466,8 +531,7 @@ const styles = {
   message: {
     padding: '12px',
     borderRadius: '8px',
-    marginBottom: '20px',
-    animation: 'slideIn 0.3s ease'
+    marginBottom: '20px'
   },
   success: {
     background: '#d4edda',
@@ -549,6 +613,32 @@ const styles = {
     height: '100%',
     objectFit: 'cover'
   },
+  mainBadge: {
+    position: 'absolute',
+    top: '5px',
+    left: '5px',
+    fontSize: '14px',
+    background: 'rgba(0,0,0,0.5)',
+    color: 'gold',
+    padding: '2px 5px',
+    borderRadius: '4px'
+  },
+  setMainBtn: {
+    position: 'absolute',
+    top: '5px',
+    left: '5px',
+    width: '24px',
+    height: '24px',
+    borderRadius: '50%',
+    background: 'rgba(255,215,0,0.8)',
+    color: '#000',
+    border: 'none',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    fontSize: '14px'
+  },
   removeBtn: {
     position: 'absolute',
     top: '5px',
@@ -563,8 +653,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    fontSize: '14px',
-    transition: 'transform 0.2s'
+    fontSize: '14px'
   },
   submitBtn: {
     padding: '16px',
@@ -575,8 +664,7 @@ const styles = {
     fontSize: '16px',
     fontWeight: 'bold',
     cursor: 'pointer',
-    marginTop: '20px',
-    transition: 'opacity 0.3s'
+    marginTop: '20px'
   },
   submitBtnDisabled: {
     opacity: 0.5,
@@ -584,22 +672,12 @@ const styles = {
   }
 };
 
-// Добавляем анимации
+// Добавляем анимацию
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @keyframes spin {
     0% { transform: rotate(0deg); }
     100% { transform: rotate(360deg); }
-  }
-  @keyframes slideIn {
-    from {
-      transform: translateY(-20px);
-      opacity: 0;
-    }
-    to {
-      transform: translateY(0);
-      opacity: 1;
-    }
   }
 `;
 document.head.appendChild(styleSheet);
