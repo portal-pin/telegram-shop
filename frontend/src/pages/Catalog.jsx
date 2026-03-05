@@ -97,6 +97,15 @@ function Catalog() {
 
   return (
     <div style={styles.container}>
+      {/* КРАСИВЫЙ ЗАГОЛОВОК */}
+      <div style={styles.header}>
+        <h1 style={styles.title}>
+          <span style={styles.titleGradient}>Портал</span>
+          <span style={styles.titleVintage}> Vintage</span>
+        </h1>
+        <p style={styles.subtitle}>уникальные вещи с историей</p>
+      </div>
+
       {/* Кнопка добавления товара (только для админов) */}
       {isAdmin && (
         <div style={styles.adminBar}>
@@ -129,6 +138,7 @@ function Catalog() {
           ))}
         </div>
       </div>
+
 
       {/* Товары */}
       <div style={styles.productsSection}>
