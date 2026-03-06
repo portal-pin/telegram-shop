@@ -1,4 +1,4 @@
-// frontend/src/pages/Catalog.jsx (добавляем кнопки редактирования/удаления)
+// frontend/src/pages/Catalog.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import axios from 'axios';
@@ -8,33 +8,48 @@ const API_URL = 'https://telegram-shop-api-2n1h.onrender.com/api';
 
 function Catalog() {
   const navigate = useNavigate();
-  const { user, initData } = useTelegramUser();
+  const { user, initData, isReady } = useTelegramUser();
   const [categories, setCategories] = useState([]);
   const [products, setProducts] = useState([]);
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [checkingAdmin, setCheckingAdmin] = useState(true);
 
+  // Загружаем данные после инициализации Telegram
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-    checkAdminStatus();
-  }, []);
+    if (isReady) {
+      fetchCategories();
+      fetchProducts();
+      checkAdminStatus();
+    }
+  }, [isReady]);
 
+  // Обновляем товары при смене категории
   useEffect(() => {
-    fetchProducts(selectedCategory);
-  }, [selectedCategory]);
+    if (isReady) {
+      fetchProducts(selectedCategory);
+    }
+  }, [selectedCategory, isReady]);
 
   const checkAdminStatus = async () => {
-    if (!initData) return;
+    if (!initData) {
+      setCheckingAdmin(false);
+      return;
+    }
+    
     try {
       await axios.get(`${API_URL}/admin/categories`, {
         headers: { 'x-telegram-init-data': initData }
       });
       setIsAdmin(true);
+      console.log('✅ Админ доступ подтвержден');
     } catch (error) {
+      console.log('❌ Не админ');
       setIsAdmin(false);
+    } finally {
+      setCheckingAdmin(false);
     }
   };
 
@@ -72,7 +87,6 @@ function Catalog() {
       await axios.delete(`${API_URL}/admin/products/${productId}`, {
         headers: { 'x-telegram-init-data': initData }
       });
-      // Обновляем список товаров
       fetchProducts(selectedCategory);
       window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
     } catch (error) {
@@ -91,6 +105,16 @@ function Catalog() {
         <button onClick={() => window.location.reload()} style={styles.retryBtn}>
           Попробовать снова
         </button>
+      </div>
+    );
+  }
+
+  // Показываем загрузку пока проверяем админа
+  if (checkingAdmin || !isReady) {
+    return (
+      <div style={styles.center}>
+        <div style={styles.loader}></div>
+        <p>Загрузка...</p>
       </div>
     );
   }
@@ -139,7 +163,6 @@ function Catalog() {
         </div>
       </div>
 
-
       {/* Товары */}
       <div style={styles.productsSection}>
         <h2 style={styles.sectionTitle}>
@@ -158,7 +181,8 @@ function Catalog() {
           <div style={styles.productsGrid}>
             {products.map(product => (
               <div key={product.id} style={styles.productCard}>
-                <Link to={`/product/${product.id}`} style={{ textDecoration: 'none' }}>
+                {/* КОНТЕНТ КАРТОЧКИ - кликабельный */}
+                <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                   {product.images && product.images.length > 0 && (
                     <img 
                       src={typeof product.images[0] === 'string' 
@@ -179,21 +203,30 @@ function Catalog() {
                         <span style={styles.productEra}>{product.era}</span>
                       )}
                     </div>
+                    <button style={styles.detailsBtn}>
+                      Подробнее
+                    </button>
                   </div>
                 </Link>
                 
-                {/* Админские кнопки */}
+                {/* Админские кнопки (только для админов) */}
                 {isAdmin && (
                   <div style={styles.adminActions}>
                     <button 
-                      onClick={() => navigate(`/admin/${product.id}`)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        navigate(`/admin/${product.id}`);
+                      }}
                       style={styles.editBtn}
                       title="Редактировать"
                     >
                       ✏️
                     </button>
                     <button 
-                      onClick={() => handleDelete(product.id, product.name)}
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDelete(product.id, product.name);
+                      }}
                       style={styles.deleteBtn}
                       title="Удалить"
                     >
@@ -217,8 +250,53 @@ const styles = {
     padding: '20px'
   },
   center: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: '100vh',
     textAlign: 'center',
-    padding: '40px 20px'
+    padding: '20px'
+  },
+  loader: {
+    width: '40px',
+    height: '40px',
+    border: '3px solid var(--tg-theme-secondary-bg-color, #f3f3f3)',
+    borderTop: '3px solid var(--tg-theme-button-color, #40a7e3)',
+    borderRadius: '50%',
+    animation: 'spin 1s linear infinite',
+    marginBottom: '20px'
+  },
+  header: {
+    textAlign: 'center',
+    marginBottom: '40px',
+    padding: '20px 0',
+    borderBottom: '2px solid rgba(64, 167, 227, 0.2)'
+  },
+  title: {
+    fontSize: 'clamp(32px, 8vw, 48px)',
+    fontWeight: '800',
+    margin: '0 0 10px 0',
+    letterSpacing: '2px'
+  },
+  titleGradient: {
+    background: 'linear-gradient(135deg, #667eea 0%, #764ba2 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text',
+    textShadow: '2px 2px 4px rgba(0,0,0,0.1)'
+  },
+  titleVintage: {
+    background: 'linear-gradient(135deg, #f093fb 0%, #f5576c 100%)',
+    WebkitBackgroundClip: 'text',
+    WebkitTextFillColor: 'transparent',
+    backgroundClip: 'text'
+  },
+  subtitle: {
+    fontSize: '16px',
+    color: 'var(--tg-theme-hint-color, #666)',
+    letterSpacing: '1px',
+    textTransform: 'uppercase'
   },
   retryBtn: {
     padding: '10px 20px',
@@ -324,12 +402,24 @@ const styles = {
     background: 'rgba(0,0,0,0.05)',
     borderRadius: '4px'
   },
+  detailsBtn: {
+    width: '100%',
+    padding: '10px',
+    background: 'var(--tg-theme-button-color, #40a7e3)',
+    color: 'var(--tg-theme-button-text-color, #fff)',
+    border: 'none',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    fontSize: '14px',
+    transition: 'opacity 0.3s'
+  },
   adminActions: {
     position: 'absolute',
     top: '10px',
     right: '10px',
     display: 'flex',
-    gap: '5px'
+    gap: '5px',
+    zIndex: 10
   },
   editBtn: {
     padding: '5px 10px',
@@ -338,7 +428,8 @@ const styles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '14px'
+    fontSize: '14px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
   },
   deleteBtn: {
     padding: '5px 10px',
@@ -347,8 +438,19 @@ const styles = {
     border: 'none',
     borderRadius: '4px',
     cursor: 'pointer',
-    fontSize: '14px'
+    fontSize: '14px',
+    boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
   }
 };
+
+// Добавляем анимацию
+const styleSheet = document.createElement("style");
+styleSheet.textContent = `
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
+`;
+document.head.appendChild(styleSheet);
 
 export default Catalog;
