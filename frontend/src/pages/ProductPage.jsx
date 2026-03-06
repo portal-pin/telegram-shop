@@ -85,7 +85,9 @@ function ProductPage() {
       {product.images && product.images.length > 0 && (
         <div style={styles.gallery}>
           <img 
-            src={product.images[selectedImage]} 
+            src={typeof product.images[selectedImage] === 'string' 
+              ? product.images[selectedImage]
+              : product.images[selectedImage]?.url} 
             alt={product.name}
             style={styles.mainImage}
           />
@@ -95,7 +97,7 @@ function ProductPage() {
               {product.images.map((img, index) => (
                 <img
                   key={index}
-                  src={img}
+                  src={typeof img === 'string' ? img : img.url}
                   alt={`${product.name} ${index + 1}`}
                   style={{
                     ...styles.thumbnail,

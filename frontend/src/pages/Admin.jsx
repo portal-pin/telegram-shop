@@ -74,7 +74,7 @@ function Admin() {
       const res = await axios.get(`${API_URL}/products/${productId}`);
       const product = res.data;
       
-      // Преобразуем изображения обратно в массив URL
+      // Преобразуем объекты изображений обратно в массив URL
       const images = product.images?.map(img => 
         typeof img === 'string' ? img : img.url
       ) || [];
@@ -147,7 +147,12 @@ function Admin() {
     const newImages = [...formData.images];
     const [selected] = newImages.splice(index, 1);
     newImages.unshift(selected);
+    
+    // Сохраняем как массив строк (URL)
     setFormData(prev => ({ ...prev, images: newImages }));
+    
+    // Показываем тактильный отклик
+    window.Telegram?.WebApp?.HapticFeedback?.impactOccurred('light');
   };
 
   const removeImage = (index) => {
@@ -171,9 +176,16 @@ function Admin() {
       
       const method = id ? 'put' : 'post';
 
+      // Преобразуем массив строк в массив объектов с isMain
+      const imagesForDb = formData.images.map((img, idx) => ({
+        url: img,
+        isMain: idx === 0 // Первое фото - главное
+      }));
+
       const res = await axios[method](url, {
         ...formData,
-        price: parseInt(formData.price)
+        price: parseInt(formData.price),
+        images: imagesForDb // Отправляем объекты, а не строки
       }, {
         headers: { 'x-telegram-init-data': initData }
       });
@@ -181,7 +193,6 @@ function Admin() {
       if (res.data.success) {
         showMessage(id ? '✅ Товар обновлен!' : '✅ Товар добавлен!', 'success');
         if (!id) {
-          // Очищаем форму только для нового товара
           setFormData({
             name: '', price: '', categoryId: '', description: '',
             defects: '', condition: 'good', era: '', brand: '',
@@ -189,9 +200,12 @@ function Admin() {
             isAvailable: true
           });
         }
+        
+        // Задержка перед возвратом в каталог
         setTimeout(() => navigate('/'), 2000);
       }
     } catch (error) {
+      console.error('Ошибка сохранения:', error);
       showMessage('Ошибка при сохранении', 'error');
     } finally {
       setLoading(false);
