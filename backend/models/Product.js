@@ -21,6 +21,18 @@ const Product = sequelize.define('Product', {
     type: DataTypes.TEXT,
     allowNull: true
   },
+  mannequinParams: {        // Параметры манекена
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  myParams: {               // Мои параметры
+    type: DataTypes.STRING,
+    allowNull: true
+  },
+  detailedSizes: {          // Подробные размеры
+    type: DataTypes.TEXT,
+    allowNull: true
+  },
   price: {
     type: DataTypes.INTEGER,
     allowNull: false
