@@ -160,6 +160,34 @@ function ProductPage() {
               <span style={styles.charValue}>{product.madeIn}</span>
             </div>
           )}
+          {product.mannequinParams && (
+            <div style={styles.charItem}>
+              <span style={styles.charLabel}>👤 Параметры манекена:</span>
+              <span style={styles.charValue}>{product.mannequinParams}</span>
+            </div>
+          )}
+          {product.myParams && (
+            <div style={styles.charItem}>
+              <span style={styles.charLabel}>📏 Мои параметры:</span>
+              <span style={styles.charValue}>{product.myParams}</span>
+            </div>
+          )}
+          {product.detailedSizes && (
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>📐 Подробные размеры</h3>
+              <div style={styles.sizesBox}>
+                {product.detailedSizes.split('\n').map((line, index) => {
+                  const [key, value] = line.split(':');
+                  return (
+                    <div key={index} style={styles.sizeRow}>
+                      <span style={styles.sizeLabel}>{key}:</span>
+                      <span style={styles.sizeValue}>{value}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Описание */}
@@ -357,7 +385,28 @@ const styles = {
     color: 'var(--tg-theme-hint-color, #999)',
     textAlign: 'center',
     marginTop: '10px'
+  },
+  sizesBox: {
+    background: 'var(--tg-theme-secondary-bg-color, #f8f9fa)',
+    padding: '15px',
+    borderRadius: '10px',
+    border: '1px solid #eee'
+  },
+  sizeRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    padding: '8px 0',
+    borderBottom: '1px dashed #ddd'
+  },
+  sizeLabel: {
+    color: 'var(--tg-theme-hint-color, #666)',
+    fontSize: '14px'
+  },
+  sizeValue: {
+    fontWeight: '500',
+    fontSize: '14px'
   }
+  
 };
 
 // Добавляем анимацию

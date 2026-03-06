@@ -22,6 +22,9 @@ function Admin() {
     categoryId: '',
     description: '',
     defects: '',
+    mannequinParams: '',      
+    myParams: '',            
+    detailedSizes: '',   
     condition: 'good',
     era: '',
     brand: '',
@@ -85,6 +88,9 @@ function Admin() {
         categoryId: product.categoryId || '',
         description: product.description || '',
         defects: product.defects || '',
+        mannequinParams: product.mannequinParams || '',   
+        myParams: product.myParams || '',                 
+        detailedSizes: product.detailedSizes || '', 
         condition: product.condition || 'good',
         era: product.era || '',
         brand: product.brand || '',
@@ -363,6 +369,56 @@ function Admin() {
             rows="3"
             placeholder="Потертости, отсутствие пуговиц, следы носки..."
           />
+        </div>
+
+        <div style={styles.field}>
+          <label style={styles.label}>Параметры манекена</label>
+            <input
+              type="text"
+              name="mannequinParams"
+              value={formData.mannequinParams}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="Например: рост 170, грудь 86, талия 64, бедра 92"
+            />
+            <small style={{color: '#666', fontSize: '12px'}}>
+              На каких параметрах снято фото
+            </small>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Мои параметры</label>
+            <input
+              type="text"
+              name="myParams"
+              value={formData.myParams}
+              onChange={handleInputChange}
+              style={styles.input}
+              placeholder="Ваши параметры для сравнения"
+            />
+            <small style={{color: '#666', fontSize: '12px'}}>
+              Например: рост 165, грудь 90, талия 68, бедра 96
+            </small>
+          </div>
+
+          <div style={styles.field}>
+            <label style={styles.label}>Подробные размеры</label>
+            <textarea
+              name="detailedSizes"
+              value={formData.detailedSizes}
+              onChange={handleInputChange}
+              style={styles.textarea}
+              rows="4"
+              placeholder="Длина изделия: 75 см
+                            Длина рукава: 62 см
+                            Ширина в плечах: 44 см
+                            Ширина в груди: 52 см
+                            Ширина в талии: 48 см
+                            Ширина в бедрах: 54 см"
+                />
+            <small style={{color: '#666', fontSize: '12px'}}>
+              Максимально подробно: длина, ширина, рукава и т.д.
+            </small>
         </div>
 
         <div style={styles.grid}>
