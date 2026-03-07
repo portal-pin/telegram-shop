@@ -17,19 +17,19 @@ const Product = sequelize.define('Product', {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  defects: {                  
+  defects: {
     type: DataTypes.TEXT,
     allowNull: true
   },
-  mannequinParams: {        // Параметры манекена
+  mannequinParams: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  myParams: {               // Мои параметры
+  myParams: {
     type: DataTypes.STRING,
     allowNull: true
   },
-  detailedSizes: {          // Подробные размеры
+  detailedSizes: {
     type: DataTypes.TEXT,
     allowNull: true
   },
@@ -39,7 +39,8 @@ const Product = sequelize.define('Product', {
   },
   condition: {
     type: DataTypes.ENUM('mint', 'excellent', 'good', 'vintage'),
-    allowNull: true
+    allowNull: true,
+    defaultValue: 'good'
   },
   era: {
     type: DataTypes.STRING,
@@ -63,7 +64,47 @@ const Product = sequelize.define('Product', {
   },
   images: {
     type: DataTypes.JSON,
-    defaultValue: []
+    defaultValue: [],
+    // Добавляем геттер для совместимости
+    get() {
+      const rawValue = this.getDataValue('images');
+      if (!rawValue) return [];
+      
+      // Если это массив строк - возвращаем как есть
+      if (Array.isArray(rawValue) && rawValue.every(item => typeof item === 'string')) {
+        return rawValue;
+      }
+      
+      // Если это массив объектов - преобразуем в массив строк
+      if (Array.isArray(rawValue)) {
+        return rawValue.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && item.url) return item.url;
+          return null;
+        }).filter(Boolean);
+      }
+      
+      return [];
+    },
+    // Добавляем сеттер для правильного сохранения
+    set(value) {
+      if (!value) {
+        this.setDataValue('images', []);
+        return;
+      }
+      
+      // Всегда сохраняем как массив строк
+      if (Array.isArray(value)) {
+        const stringArray = value.map(item => {
+          if (typeof item === 'string') return item;
+          if (item && item.url) return item.url;
+          return null;
+        }).filter(Boolean);
+        this.setDataValue('images', stringArray);
+      } else {
+        this.setDataValue('images', []);
+      }
+    }
   },
   isAvailable: {
     type: DataTypes.BOOLEAN,
@@ -73,8 +114,12 @@ const Product = sequelize.define('Product', {
   timestamps: true
 });
 
-// Связь с категорией
-Product.belongsTo(Category, { foreignKey: 'categoryId' });
+// Определяем связи
+Product.belongsTo(Category, { 
+  foreignKey: 'categoryId',
+  onDelete: 'SET NULL',
+  onUpdate: 'CASCADE'
+});
 Category.hasMany(Product, { foreignKey: 'categoryId' });
 
 module.exports = Product;
