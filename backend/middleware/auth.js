@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 
 // Разрешённые ID пользователей (не username, а числовой ID из Telegram)
-const ALLOWED_ADMINS = [1495591226, 6063610157]; // ЗАМЕНИ НА РЕАЛЬНЫЕ ID @Margo_portal и @volkula66
+const ALLOWED_ADMINS = [1495591226, 6063610157];
 
 const validateTelegramData = (initData, botToken) => {
   try {
