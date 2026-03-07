@@ -16,6 +16,8 @@ function Catalog() {
   const [error, setError] = useState(null);
   const [isAdmin, setIsAdmin] = useState(false);
   const [checkingAdmin, setCheckingAdmin] = useState(true);
+  const [selectedStyle, setSelectedStyle] = useState(null);
+  const [availableStyles, setAvailableStyles] = useState([]);
 
   // Загружаем данные после инициализации Telegram
   useEffect(() => {
@@ -32,6 +34,13 @@ function Catalog() {
       fetchProducts(selectedCategory);
     }
   }, [selectedCategory, isReady]);
+
+  useEffect(() => {
+  if (products.length > 0) {
+    const styles = [...new Set(products.map(p => p.era).filter(Boolean))];
+      setAvailableStyles(styles);
+    }
+  }, [products]);
 
   const checkAdminStatus = async () => {
     if (!initData) {
@@ -60,7 +69,7 @@ function Catalog() {
   if (typeof firstImage === 'string') return firstImage;
   if (firstImage && firstImage.url) return firstImage.url;
   return null;
-};
+  };
 
   const fetchCategories = async () => {
     try {
@@ -71,12 +80,29 @@ function Catalog() {
     }
   };
 
-  const fetchProducts = async (categoryId = null) => {
+  const resetCategory = () => setSelectedCategory(null);
+  const resetStyle = () => setSelectedStyle(null);
+  const resetAll = () => {
+    setSelectedCategory(null);
+    setSelectedStyle(null);
+  };
+
+  const fetchProducts = async () => {
     setLoading(true);
     try {
-      const url = categoryId 
-        ? `${API_URL}/products?category=${categoryId}`
-        : `${API_URL}/products`;
+      let url = `${API_URL}/products`;
+      const params = new URLSearchParams();
+      
+      if (selectedCategory) {
+        params.append('category', selectedCategory);
+      }
+      if (selectedStyle) {
+        params.append('era', selectedStyle);
+      }
+      
+      if (params.toString()) {
+        url += '?' + params.toString();
+      }
       
       const res = await axios.get(url);
       setProducts(res.data);
@@ -170,6 +196,50 @@ function Catalog() {
             </button>
           ))}
         </div>
+      </div>
+
+      {/* Фильтр по стилям */}
+      {availableStyles.length > 0 && (
+        <div style={styles.filterSection}>
+          <div style={styles.filterHeader}>
+            <h3 style={styles.filterTitle}>Стиль</h3>
+            {selectedStyle && (
+              <button onClick={resetStyle} style={styles.resetSmallBtn}>
+                Все стили
+              </button>
+            )}
+          </div>
+          <div style={styles.filterButtons}>
+            {availableStyles.map(style => (
+              <button
+                key={style}
+                onClick={() => setSelectedStyle(prev => prev === style ? null : style)}
+                style={{
+                  ...styles.filterBtn,
+                  ...(selectedStyle === style ? styles.filterBtnActive : {})
+                }}
+              >
+                {style}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Кнопки сброса */}
+      <div style={styles.resetSection}>
+        {(selectedCategory || selectedStyle) && (
+          <>
+            <button onClick={resetAll} style={styles.resetAllBtn}>
+              ✕ Все товары
+            </button>
+            {selectedCategory && (
+              <button onClick={resetCategory} style={styles.resetBtn}>
+                ✕ Все категории
+              </button>
+            )}
+          </>
+        )}
       </div>
 
       {/* Товары */}
@@ -450,6 +520,76 @@ const styles = {
     cursor: 'pointer',
     fontSize: '14px',
     boxShadow: '0 2px 4px rgba(0,0,0,0.2)'
+  },
+  filterSection: {
+    marginBottom: '30px',
+    padding: '15px',
+    background: 'var(--tg-theme-secondary-bg-color, #f5f5f5)',
+    borderRadius: '12px'
+  },
+  filterHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: '10px'
+  },
+  filterTitle: {
+    fontSize: '16px',
+    fontWeight: '600',
+    margin: 0,
+    color: 'var(--tg-theme-text-color, #000)'
+  },
+  filterButtons: {
+    display: 'flex',
+    flexWrap: 'wrap',
+    gap: '8px'
+  },
+  filterBtn: {
+    padding: '8px 16px',
+    background: 'var(--tg-theme-bg-color, #fff)',
+    border: '1px solid #ddd',
+    borderRadius: '20px',
+    fontSize: '13px',
+    cursor: 'pointer',
+    transition: 'all 0.2s'
+  },
+  filterBtnActive: {
+    background: 'var(--tg-theme-button-color, #40a7e3)',
+    color: '#fff',
+    borderColor: 'var(--tg-theme-button-color, #40a7e3)'
+  },
+  resetSection: {
+    display: 'flex',
+    gap: '10px',
+    marginBottom: '20px',
+    flexWrap: 'wrap'
+  },
+  resetAllBtn: {
+    padding: '8px 16px',
+    background: '#dc3545',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '20px',
+    fontSize: '13px',
+    cursor: 'pointer'
+  },
+  resetBtn: {
+    padding: '8px 16px',
+    background: '#6c757d',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '20px',
+    fontSize: '13px',
+    cursor: 'pointer'
+  },
+  resetSmallBtn: {
+    padding: '4px 12px',
+    background: 'none',
+    color: 'var(--tg-theme-button-color, #40a7e3)',
+    border: '1px solid var(--tg-theme-button-color, #40a7e3)',
+    borderRadius: '16px',
+    fontSize: '12px',
+    cursor: 'pointer'
   }
 };
 

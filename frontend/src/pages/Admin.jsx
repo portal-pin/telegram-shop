@@ -6,6 +6,14 @@ import { useTelegramUser } from '../hooks/useTelegramUser';
 
 const API_URL = 'https://telegram-shop-api-2n1h.onrender.com/api';
 
+const STYLE_OPTIONS = [
+  'Y2K',
+  'Dark Academia', 
+  'Fairycore',
+  'Goblincore',
+  'Romantic Goth'
+];
+
 function Admin() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -445,15 +453,18 @@ function Admin() {
           </div>
 
           <div style={styles.field}>
-            <label style={styles.label}>Эпоха</label>
-            <input
-              type="text"
+            <label style={styles.label}>Направление стиля</label>
+            <select
               name="era"
               value={formData.era}
               onChange={handleInputChange}
-              style={styles.input}
-              placeholder="80s, 90s, 00s"
-            />
+              style={styles.select}
+            >
+              <option value="">Выберите стиль</option>
+              {STYLE_OPTIONS.map(style => (
+                <option key={style} value={style}>{style}</option>
+              ))}
+            </select>
           </div>
 
           <div style={styles.field}>

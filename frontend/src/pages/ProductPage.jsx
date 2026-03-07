@@ -170,27 +170,46 @@ function ProductPage() {
               <span style={styles.charValue}>{product.madeIn}</span>
             </div>
           )}
-          {product.mannequinParams && (
-            <div style={styles.charItem}>
-              <span style={styles.charLabel}>👤 Параметры манекена:</span>
-              <span style={styles.charValue}>{product.mannequinParams}</span>
+          // frontend/src/pages/ProductPage.jsx - добавляем после характеристик
+
+        {/* Блок с параметрами размеров */}
+          {(product.mannequinParams || product.myParams) && (
+            <div style={styles.section}>
+              <h3 style={styles.sectionTitle}>📏 Параметры для сравнения</h3>
+              <div style={styles.paramsGrid}>
+                {product.mannequinParams && (
+                  <div style={styles.paramCard}>
+                    <div style={styles.paramIcon}>👤</div>
+                    <div style={styles.paramContent}>
+                      <div style={styles.paramLabel}>Параметры манекена</div>
+                      <div style={styles.paramValue}>{product.mannequinParams}</div>
+                    </div>
+                  </div>
+                )}
+                {product.myParams && (
+                  <div style={styles.paramCard}>
+                    <div style={styles.paramIcon}>📐</div>
+                    <div style={styles.paramContent}>
+                      <div style={styles.paramLabel}>Мои параметры</div>
+                      <div style={styles.paramValue}>{product.myParams}</div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
-          {product.myParams && (
-            <div style={styles.charItem}>
-              <span style={styles.charLabel}>📏 Мои параметры:</span>
-              <span style={styles.charValue}>{product.myParams}</span>
-            </div>
-          )}
+
+        {/* Подробные размеры */}
           {product.detailedSizes && (
             <div style={styles.section}>
-              <h3 style={styles.sectionTitle}>📐 Подробные размеры</h3>
-              <div style={styles.sizesBox}>
+              <h3 style={styles.sectionTitle}>📐 Подробные размеры (см)</h3>
+              <div style={styles.sizesGrid}>
                 {product.detailedSizes.split('\n').map((line, index) => {
-                  const [key, value] = line.split(':');
+                  if (!line.trim()) return null;
+                  const [key, value] = line.split(':').map(s => s.trim());
                   return (
-                    <div key={index} style={styles.sizeRow}>
-                      <span style={styles.sizeLabel}>{key}:</span>
+                    <div key={index} style={styles.sizeItem}>
+                      <span style={styles.sizeKey}>{key}</span>
                       <span style={styles.sizeValue}>{value}</span>
                     </div>
                   );
@@ -415,6 +434,60 @@ const styles = {
   sizeValue: {
     fontWeight: '500',
     fontSize: '14px'
+  },
+  paramsGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
+    gap: '15px',
+    marginTop: '10px'
+  },
+  paramCard: {
+    display: 'flex',
+    gap: '12px',
+    padding: '15px',
+    background: 'var(--tg-theme-secondary-bg-color, #f8f9fa)',
+    borderRadius: '12px',
+    border: '1px solid #eee'
+  },
+  paramIcon: {
+    fontSize: '24px',
+    lineHeight: 1
+  },
+  paramContent: {
+    flex: 1
+  },
+  paramLabel: {
+    fontSize: '12px',
+    color: 'var(--tg-theme-hint-color, #666)',
+    marginBottom: '4px'
+  },
+  paramValue: {
+    fontSize: '14px',
+    fontWeight: '500'
+  },
+  sizesGrid: {
+    display: 'grid',
+    gridTemplateColumns: 'repeat(auto-fill, minmax(150px, 1fr))',
+    gap: '10px',
+    padding: '15px',
+    background: 'var(--tg-theme-secondary-bg-color, #f8f9fa)',
+    borderRadius: '12px'
+  },
+  sizeItem: {
+    display: 'flex',
+    flexDirection: 'column',
+    padding: '8px',
+    background: 'var(--tg-theme-bg-color, #fff)',
+    borderRadius: '8px'
+  },
+  sizeKey: {
+    fontSize: '11px',
+    color: 'var(--tg-theme-hint-color, #666)',
+    marginBottom: '2px'
+  },
+  sizeValue: {
+    fontSize: '14px',
+    fontWeight: '600'
   }
   
 };
