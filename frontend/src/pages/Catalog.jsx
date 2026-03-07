@@ -53,6 +53,15 @@ function Catalog() {
     }
   };
 
+  const getImageUrl = (product) => {
+  if (!product.images || !product.images.length) return null;
+  
+  const firstImage = product.images[0];
+  if (typeof firstImage === 'string') return firstImage;
+  if (firstImage && firstImage.url) return firstImage.url;
+  return null;
+};
+
   const fetchCategories = async () => {
     try {
       const res = await axios.get(`${API_URL}/categories`);
@@ -185,11 +194,12 @@ function Catalog() {
                 <Link to={`/product/${product.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                   {product.images && product.images.length > 0 && (
                     <img 
-                      src={typeof product.images[0] === 'string' 
-                        ? product.images[0] 
-                        : product.images[0]?.url} 
+                      src={getImageUrl(product)} 
                       alt={product.name}
                       style={styles.productImage}
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/300x200?text=Фото+не+доступно';
+                      }}
                     />
                   )}
                   <div style={styles.productInfo}>

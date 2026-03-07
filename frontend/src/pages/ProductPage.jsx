@@ -30,6 +30,12 @@ function ProductPage() {
     }
   };
 
+  const getImageUrl = (image, index) => {
+    if (typeof image === 'string') return image;
+    if (image && image.url) return image.url;
+    return null;
+  };
+
   const handleContactClick = () => {
     if (tg) {
       // Показываем сообщение в боте
@@ -85,11 +91,12 @@ function ProductPage() {
       {product.images && product.images.length > 0 && (
         <div style={styles.gallery}>
           <img 
-            src={typeof product.images[selectedImage] === 'string' 
-              ? product.images[selectedImage]
-              : product.images[selectedImage]?.url} 
+            src={getImageUrl(product.images[selectedImage])} 
             alt={product.name}
             style={styles.mainImage}
+            onError={(e) => {
+              e.target.src = 'https://via.placeholder.com/600x400?text=Фото+не+доступно';
+            }}
           />
           
           {product.images.length > 1 && (
@@ -97,13 +104,16 @@ function ProductPage() {
               {product.images.map((img, index) => (
                 <img
                   key={index}
-                  src={typeof img === 'string' ? img : img.url}
+                  src={getImageUrl(img)}
                   alt={`${product.name} ${index + 1}`}
                   style={{
                     ...styles.thumbnail,
                     ...(selectedImage === index ? styles.thumbnailActive : {})
                   }}
                   onClick={() => setSelectedImage(index)}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/70x70?text=Ошибка';
+                  }}
                 />
               ))}
             </div>

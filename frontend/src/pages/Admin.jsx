@@ -77,10 +77,17 @@ function Admin() {
       const res = await axios.get(`${API_URL}/products/${productId}`);
       const product = res.data;
       
-      // Преобразуем объекты изображений обратно в массив URL
-      const images = product.images?.map(img => 
-        typeof img === 'string' ? img : img.url
-      ) || [];
+      // Получаем массив строк из images
+      const images = [];
+      if (product.images && Array.isArray(product.images)) {
+        product.images.forEach(img => {
+          if (typeof img === 'string') {
+            images.push(img);
+          } else if (img && img.url) {
+            images.push(img.url);
+          }
+        });
+      }
 
       setFormData({
         name: product.name || '',
@@ -88,9 +95,9 @@ function Admin() {
         categoryId: product.categoryId || '',
         description: product.description || '',
         defects: product.defects || '',
-        mannequinParams: product.mannequinParams || '',   
-        myParams: product.myParams || '',                 
-        detailedSizes: product.detailedSizes || '', 
+        mannequinParams: product.mannequinParams || '',
+        myParams: product.myParams || '',
+        detailedSizes: product.detailedSizes || '',
         condition: product.condition || 'good',
         era: product.era || '',
         brand: product.brand || '',
@@ -135,15 +142,18 @@ function Admin() {
       });
 
       if (res.data.success) {
+        // Важно: берем ТОЛЬКО url из ответа
         const newImages = res.data.images.map(img => img.url);
         setFormData(prev => ({
           ...prev,
           images: [...prev.images, ...newImages]
         }));
-        showMessage('Фото загружены!', 'success');
+        showMessage('✅ Фото загружены!', 'success');
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
       }
     } catch (error) {
-      showMessage('Ошибка загрузки фото', 'error');
+      console.error('Ошибка загрузки:', error);
+      showMessage('❌ Ошибка загрузки фото', 'error');
     } finally {
       setLoading(false);
     }
@@ -182,17 +192,14 @@ function Admin() {
       
       const method = id ? 'put' : 'post';
 
-      // Преобразуем массив строк в массив объектов с isMain
-      const imagesForDb = formData.images.map((img, idx) => ({
-        url: img,
-        isMain: idx === 0 // Первое фото - главное
-      }));
-
-      const res = await axios[method](url, {
+      // Отправляем images как простой массив строк
+      const productData = {
         ...formData,
         price: parseInt(formData.price),
-        images: imagesForDb // Отправляем объекты, а не строки
-      }, {
+        images: formData.images // Уже массив строк
+      };
+
+      const res = await axios[method](url, productData, {
         headers: { 'x-telegram-init-data': initData }
       });
 
@@ -201,18 +208,18 @@ function Admin() {
         if (!id) {
           setFormData({
             name: '', price: '', categoryId: '', description: '',
-            defects: '', condition: 'good', era: '', brand: '',
+            defects: '', mannequinParams: '', myParams: '', detailedSizes: '',
+            condition: 'good', era: '', brand: '',
             size: '', material: '', madeIn: '', images: [],
             isAvailable: true
           });
         }
-        
-        // Задержка перед возвратом в каталог
-        setTimeout(() => navigate('/'), 2000);
+        window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+        setTimeout(() => navigate('/'), 1500);
       }
     } catch (error) {
       console.error('Ошибка сохранения:', error);
-      showMessage('Ошибка при сохранении', 'error');
+      showMessage('❌ Ошибка при сохранении', 'error');
     } finally {
       setLoading(false);
     }
