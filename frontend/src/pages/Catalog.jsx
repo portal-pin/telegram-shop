@@ -18,10 +18,12 @@ function Catalog() {
   const [checkingAdmin, setCheckingAdmin] = useState(true);
   const [selectedStyle, setSelectedStyle] = useState(null);
   const [availableStyles, setAvailableStyles] = useState([]);
+  const [allStyles, setAllStyles] = useState([]);
 
   // Загружаем данные после инициализации Telegram
   useEffect(() => {
     if (isReady) {
+      fetchAllStyles();
       fetchCategories();
       fetchProducts();
       checkAdminStatus();
@@ -77,6 +79,21 @@ function Catalog() {
       setCategories(res.data);
     } catch (error) {
       setError('Не удалось загрузить категории');
+    }
+  };
+
+  const fetchAllStyles = async () => {
+    try {
+      // Получаем все товары без фильтров, чтобы собрать уникальные стили
+      const res = await axios.get(`${API_URL}/products?limit=1000`);
+      const allProducts = res.data;
+      
+      // Собираем уникальные стили из всех товаров
+      const styles = [...new Set(allProducts.map(p => p.era).filter(Boolean))];
+      setAllStyles(styles);
+      console.log('Все доступные стили:', styles);
+    } catch (error) {
+      console.error('Ошибка загрузки стилей:', error);
     }
   };
 
@@ -203,7 +220,7 @@ function Catalog() {
       </div>
 
       {/* Фильтр по стилям */}
-      {availableStyles.length > 0 && (
+      {allStyles.length > 0 && (
         <div style={styles.filterSection}>
           <div style={styles.filterHeader}>
             <h3 style={styles.filterTitle}>Стиль</h3>
@@ -214,7 +231,7 @@ function Catalog() {
             )}
           </div>
           <div style={styles.filterButtons}>
-            {availableStyles.map(style => (
+            {allStyles.map(style => (
               <button
                 key={style}
                 onClick={() => setSelectedStyle(prev => prev === style ? null : style)}
