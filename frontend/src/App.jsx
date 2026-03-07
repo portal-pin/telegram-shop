@@ -9,10 +9,19 @@ import { useTelegramUser } from './hooks/useTelegramUser';
 function App() {
   const { user } = useTelegramUser();
 
+  useEffect(() => {
+    const tg = window.Telegram?.WebApp;
+    if (tg) {
+      tg.ready();
+      tg.expand(); // Раскрываем на весь экран
+      document.body.style.margin = '0';
+      document.body.style.padding = '0';
+    }
+  }, []);
+
   return (
     <BrowserRouter>
-      <div>
-        {/* Навигация только для админов будет внутри компонентов */}
+      <div style={styles.appContainer}>
         <Routes>
           <Route path="/" element={<Catalog />} />
           <Route path="/admin" element={<Admin />} />
@@ -23,5 +32,16 @@ function App() {
     </BrowserRouter>
   );
 }
+
+const styles = {
+  appContainer: {
+    width: '100%',
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    background: 'var(--tg-theme-bg-color, #fff)',
+    color: 'var(--tg-theme-text-color, #000)'
+  }
+};
 
 export default App;

@@ -170,7 +170,7 @@ function ProductPage() {
               <span style={styles.charValue}>{product.madeIn}</span>
             </div>
           )}
-          // frontend/src/pages/ProductPage.jsx - добавляем после характеристик
+          
 
         {/* Блок с параметрами размеров */}
           {(product.mannequinParams || product.myParams) && (

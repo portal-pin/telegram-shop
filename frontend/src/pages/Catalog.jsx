@@ -31,9 +31,9 @@ function Catalog() {
   // Обновляем товары при смене категории
   useEffect(() => {
     if (isReady) {
-      fetchProducts(selectedCategory);
+      fetchProducts();
     }
-  }, [selectedCategory, isReady]);
+  }, [selectedCategory, selectedStyle, isReady]);
 
   useEffect(() => {
   if (products.length > 0) {
@@ -85,6 +85,7 @@ function Catalog() {
   const resetAll = () => {
     setSelectedCategory(null);
     setSelectedStyle(null);
+  // Не вызываем fetchProducts вручную - сработает useEffect
   };
 
   const fetchProducts = async () => {
@@ -97,16 +98,19 @@ function Catalog() {
         params.append('category', selectedCategory);
       }
       if (selectedStyle) {
-        params.append('era', selectedStyle);
+        params.append('era', selectedStyle); // era в бэкенде = стиль
       }
       
       if (params.toString()) {
         url += '?' + params.toString();
       }
       
+      console.log('Запрос:', url); // Для отладки
       const res = await axios.get(url);
       setProducts(res.data);
+      setError(null);
     } catch (error) {
+      console.error('Ошибка загрузки:', error);
       setError('Не удалось загрузить товары');
     } finally {
       setLoading(false);
@@ -334,9 +338,9 @@ const styles = {
     flexDirection: 'column',
     alignItems: 'center',
     justifyContent: 'center',
-    minHeight: '100vh',
-    textAlign: 'center',
-    padding: '20px'
+    width: '100%',
+    minHeight: '400px',
+    padding: '40px 20px'
   },
   loader: {
     width: '40px',
