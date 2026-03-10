@@ -108,6 +108,29 @@ function Catalog() {
     }
   };
 
+  const handleDelete = async (productId) => {
+    if (!window.confirm('Вы уверены, что хотите удалить товар?')) {
+      return;
+    }
+
+    try {
+      await axios.delete(`${API_URL}/admin/products/${productId}`, {
+        headers: { 'x-telegram-init-data': initData }
+      });
+      
+      // Обновляем список товаров после удаления
+      fetchProducts();
+      
+      // Тактильный отклик
+      window.Telegram?.WebApp?.HapticFeedback?.notificationOccurred('success');
+      
+      console.log('✅ Товар удален');
+    } catch (error) {
+      console.error('Ошибка удаления:', error);
+      alert('Не удалось удалить товар');
+    }
+  };
+
   const resetCategory = () => setSelectedCategory(null);
   const resetStyle = () => setSelectedStyle(null);
   const resetAll = () => {
